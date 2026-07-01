@@ -1,0 +1,49 @@
+using System.Drawing;
+
+namespace C64.Controls
+{
+    partial class CharScreen
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Component Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            SuspendLayout();
+            // 
+            // CharScreen
+            // 
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            CellsOnX = 40;
+            CellsOnY = 25;
+            Name = "CharScreen";
+         
+            ShowGrid = false;
+            Size = new Size(634, 419);
+            ResumeLayout(false);
+        }
+
+        #endregion
+    }
+}
