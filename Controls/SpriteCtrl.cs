@@ -282,29 +282,26 @@ namespace C64.Controls
         
             
             int SpriteWidth = ActiveSprite.IsMulticolor ? 12 : 24;
-            if (ActiveSprite.IsMulticolor)
-            {
-                for (int y = 0; y < 21; y++)
-                    for (int x = 0; x < SpriteWidth; x++)
+  
+            for (int y = 0; y < 21; y++)
+                for (int x = 0; x < SpriteWidth; x++)
+                {
+                    Color color = Buffer.GetPixel(x, y);
+                    if (color.A != 0x00)
                     {
-                        Color color = Buffer.GetPixel(x, y);
-                        if (color.A != 0x00)
+                        if (IsMulticolor)
                         {
                             brush = new SolidBrush(ColorProvider.GetColorForSlot(ColorProvider.SelectedSlotIndex));
-                            if (IsMulticolor)
-                            {
-                                e.Graphics.FillRectangle(brush, x * MultiColorCellWidth + ShrinkCell, y * CellWidthHeight + ShrinkCell, MultiColorCellWidth - ShrinkCell, CellWidthHeight - ShrinkCell);
+                            e.Graphics.FillRectangle(brush, x * MultiColorCellWidth + ShrinkCell, y * CellWidthHeight + ShrinkCell, MultiColorCellWidth - ShrinkCell, CellWidthHeight - ShrinkCell);
 
-                            }
-                            else
-                                e.Graphics.FillRectangle(brush, x * CellWidthHeight + ShrinkCell, y * CellWidthHeight + ShrinkCell, CellWidthHeight - ShrinkCell, CellWidthHeight - ShrinkCell);
+                        }
+                        else {
+                            brush = new SolidBrush(ColorProvider.GetColorForSlot(1));
+                            e.Graphics.FillRectangle(brush, x * CellWidthHeight + ShrinkCell, y * CellWidthHeight + ShrinkCell, CellWidthHeight - ShrinkCell, CellWidthHeight - ShrinkCell);
+
                         }
                     }
-
-            }
-                   
-                
-
+                }
         }
 
 
