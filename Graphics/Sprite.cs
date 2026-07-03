@@ -81,7 +81,7 @@ namespace C64.Graphics
                     int byteIndex = (y * 3) + (x / 8);
                     int bitIndex = 7 - (x % 8);
 
-                    if (colorIndex > 0)
+                    if (value > 0)
                     {
                         RawData[byteIndex] |= (byte)(1 << bitIndex);  // הדלקת ביט בודד
                     }
@@ -111,25 +111,25 @@ namespace C64.Graphics
             }
         }
 
-        public void SaveAsPRG (string filePath,ushort address)
+        public void SaveAsPRG(string filePath, ushort address)
         {
-            Stream stream = new FileStream (filePath, FileMode.Create);
+            Stream stream = new FileStream(filePath, FileMode.Create);
             BinaryWriter binaryWriter = new BinaryWriter(stream);
 
-            binaryWriter.Write (address);
+            binaryWriter.Write(address);
 
             for (int i = 0; i < TotalBytes; i++)
             {
-                binaryWriter.Write (RawData[i]);
+                binaryWriter.Write(RawData[i]);
             }
 
-            binaryWriter.Flush() ; 
+            binaryWriter.Flush();
             binaryWriter.Close();
         }
 
-        public void LoadFromPRG (string filePath)
+        public void LoadFromPRG(string filePath)
         {
-            FileStream fstream = new FileStream (filePath, FileMode.Open);
+            FileStream fstream = new FileStream(filePath, FileMode.Open);
             BinaryReader binaryReader = new BinaryReader(fstream);
 
             ushort address = binaryReader.ReadUInt16();
@@ -194,6 +194,11 @@ namespace C64.Graphics
                     }
                 }
             }
+        }
+
+        public void Clear()
+        {
+            Array.Clear(RawData, 0, TotalBytes);
         }
     }
 }

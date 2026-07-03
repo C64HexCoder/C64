@@ -42,6 +42,14 @@ namespace C64.Controls
 
 
         }
+
+        public SpriteCtrl (Sprite sprite) : this()
+        {
+            ActiveSprite = sprite;
+        }
+
+        public Sprite ActiveSprite { get; set; } = new Sprite();
+
         public ISpriteColorProvider colorProvider;
 
         public ISpriteColorProvider ColorProvider
@@ -72,7 +80,7 @@ namespace C64.Controls
             Invalidate(); // Redraw the control to reflect changes in color provider
         }
 
-        Pen GridPen = new Pen(Color.White);
+        Pen GridPen = new Pen(Color.Red);
 
         [Category("Grid"), Description("Determines the color of the Grid")]
         public Color GridColor {
@@ -163,23 +171,9 @@ namespace C64.Controls
         }
 
 
-        public void SetSpriteData(byte[] data)
-        {
-            if (data.Length != 64)
-                throw new ArgumentException("Sprite data must be exactly 64 bytes long.");
-            SpriteData = data;
-            Invalidate(); // Redraw the control to reflect changes
-        }
-
-        public byte[] GetSpriteData()
-        {
-            return SpriteData;
-        }
-
 
         [Browsable(false)] // מונע מהמאפיין להופיע בכלל בחלון ה-Properties
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)] // אומר ל-Designer לא לכתוב את המערך הזה ב-Designer.cs
-        public byte[] SpriteData { get; set; } = new byte[64];
 
         private byte cellWidthHeight = 20;
         private byte MultiColorCellWidth;
@@ -204,11 +198,11 @@ namespace C64.Controls
         {
             get
             {
-                return isMulticolor;
+                return ActiveSprite.IsMulticolor;
             }
             set
             {
-                isMulticolor = value;
+                ActiveSprite.IsMulticolor = value;
                 Invalidate();
             }
         }
@@ -221,12 +215,12 @@ namespace C64.Controls
         
             Pen borderPen = new Pen(Color.White, 2);
             int ShrinkCell = 0;
-            e.Graphics.FillRectangle(Brushes.White, 0, 0, 24 * CellWidthHeight, 21 * CellWidthHeight);
+            //e.Graphics.FillRectangle(Brushes.White, 0, 0, 24 * CellWidthHeight, 21 * CellWidthHeight);
             //e.Graphics.DrawRectangle(borderPen, 0 , 0 , 24 * CellWidthHeight, 21 * CellWidthHeight);
             if (ShowGrid)
             {
                 ShrinkCell = 1;
-                if (!IsMulticolor)
+                if (ActiveSprite.IsMulticolor)
                 {
                     for (int x = 0; x < 24; x++)
                     {
@@ -262,48 +256,33 @@ namespace C64.Controls
             Height = 21 * CellWidthHeight + 1;
 
             Brush brush;
-            if (IsMulticolor)
-            {
-                for (int y = 0; y < 21; y++)
-                    for (int x = 0; x < 12; x++)
-                    {
-                        byte mColor = (byte)(SpriteData[y * 3 + x / 4] & (3 << (6 - ((x % 4) * 2))));
-                        mColor >>= (6 - ((x % 4) * 2)); // Shift the color bits to the rightmost position
-                        brush = new SolidBrush(GetColorFromIndex(mColor));
-                        e.Graphics.FillRectangle(brush, x * MultiColorCellWidth + ShrinkCell, y * CellWidthHeight + ShrinkCell, MultiColorCellWidth - ShrinkCell, CellWidthHeight - ShrinkCell);
 
-
-                    }
-            }
-            else
+            for (int y = 0; y < ActiveSprite.Height; y++)
             {
-                for (int i = 0; i < SpriteData.Length; i++)
+                for (int x = 0; x < ActiveSprite.Width; x++)
                 {
-                    byte dataByte = SpriteData[i];
-                    int cellX = (i % 3) * 8;
-                    int cellY = i / 3;
-                    for (int bit = 0; bit < 8; bit++)
+                    // קבלת אינדקס הצבע מהספרייט
+                    int colorIndex = ActiveSprite[x, y];
+
+                    // המרה לצבע ממשי (דרך ה-ColorProvider)
+                    Color pixelColor = ColorProvider != null ?
+                                       ColorProvider.GetColorForSlot(colorIndex) : Color.Black;
+
+                    // ציור הפיקסל על הפקד
+                    using (Brush b = new SolidBrush(pixelColor))
                     {
-                        int drawX = cellX + bit;
-
-                        if ((dataByte & (1 << (7 - bit))) != 0)
-                        {
-                            brush = new SolidBrush(GetColorFromIndex(2));
-                        }
+                        if (ActiveSprite.IsMulticolor)
+                            e.Graphics.FillRectangle(b, x * MultiColorCellWidth, y * CellWidthHeight, MultiColorCellWidth-ShrinkCell, CellWidthHeight-ShrinkCell);
                         else
-                        {
-                            brush = new SolidBrush(GetColorFromIndex(0));
-                        }
-
-                        e.Graphics.FillRectangle(brush, drawX * CellWidthHeight + ShrinkCell, cellY * CellWidthHeight + ShrinkCell, CellWidthHeight - ShrinkCell, CellWidthHeight - ShrinkCell);
+                            e.Graphics.FillRectangle(b, x * CellWidthHeight, y * CellWidthHeight, CellWidthHeight-ShrinkCell, CellWidthHeight-ShrinkCell);
                     }
                 }
-
             }
 
-
-            int SpriteWidth = IsMulticolor ? 12 : 24;
-            if (IsLineStarted)
+        
+            
+            int SpriteWidth = ActiveSprite.IsMulticolor ? 12 : 24;
+            if (ActiveSprite.IsMulticolor)
             {
                 for (int y = 0; y < 21; y++)
                     for (int x = 0; x < SpriteWidth; x++)
@@ -335,25 +314,24 @@ namespace C64.Controls
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-            int cellX = e.X / CellWidthHeight;
-            int cellY = e.Y / CellWidthHeight;
+
+            int cellX = e.X / (this.Width / ActiveSprite.Width);
+            int cellY = e.Y / (this.Height / ActiveSprite.Height);
 
             switch (CurrentDrawingState)
             {
                 case DrawingState.Pen:
-                                        cellX = isMulticolor ? cellX / 2 : cellX;
+     
 
                     SetCell(cellX, cellY);
                     //Invalidate();
                     break;
                 case DrawingState.Line:
-                    cellX = isMulticolor ? cellX / 2 : cellX;
 
                     lineStartCell = new Point (cellX, cellY);
                     IsLineStarted = true;
                     break;
                 case DrawingState.Rectangle:
-                    cellX = isMulticolor ? cellX / 2 : cellX;
 
                     lineStartCell = new Point (cellX, cellY);
                     IsLineStarted = true;
@@ -370,34 +348,10 @@ namespace C64.Controls
 
         private void SetCell (int cellX, int cellY)
         {
-            if (IsMulticolor)
-            {
-
-                //cellX /= 2; // In multicolor mode, each cell is effectively 2 pixels wide
-
-                byte mColor = (byte)(SelectedColor << (6 - ((cellX % 4) * 2))); // Shift the selected color to the correct position
-                //byte mColor = (byte)(SelectedColor << (6 - ((cellX % 4) * 2))); // Shift the selected color to the correct position
-                //mColor = (byte)(3 << (6 - ((cellX % 4) * 2))); // Mask to ensure only the relevant bits are affected
-                byte earaseMask = (byte)~(3 << (6 - ((cellX % 4) * 2))); // Mask to clear the existing color bits for this cell
-                SpriteData[cellY * 3 + (cellX / 4)] &= earaseMask; // Clear the existing color bits for this cell
-                SpriteData[cellY * 3 + (cellX / 4)] |= (byte)mColor; // Toggle the color bits]
+   
+                ActiveSprite[cellX, cellY] = (byte)SelectedColor; // Update the ActiveSprite with the selected color
                 Invalidate(); // Redraw the control to reflect changes
 
-            }
-            else
-            {
-                int byteIndex = cellY * 3 + (cellX / 8);
-                int bitIndex = 7 - (cellX % 8);
-                byte earaseMask = (byte)~ (1 << bitIndex);
-                if (byteIndex < SpriteData.Length)
-                {
-                    if (ColorProvider.SelectedSlotIndex == 0)
-                        SpriteData[byteIndex] &= earaseMask;
-                    else
-                        SpriteData[byteIndex] |= (byte)(1 << bitIndex); // Toggle the bit
-                    Invalidate(); // Redraw the control to reflect changes
-                }
-            }
         }
 
         PointF LineEndCell;
@@ -407,15 +361,15 @@ namespace C64.Controls
 
             if (e.X >= this.Width || e.Y >= this.Height || e.X < 0 || e.Y < 0)
                 return; // Prevent drawing outside the control bounds
-            Pen drawingPen = new Pen(ColorProvider.GetColorForSlot(ColorProvider.SelectedSlotIndex), 1);
+            Pen drawingPen = new Pen(ColorProvider.GetColorForSlot(SelectedColor), 1);
 
 
             System.Drawing.Graphics g = CreateGraphics();
 
             if (e.Button == MouseButtons.Left)
             {
-                int cellX = e.X / CellWidthHeight;
-                int cellY = e.Y / CellWidthHeight;
+                int cellX = e.X / (this.Width / ActiveSprite.Width);
+                int cellY = e.Y / (this.Height / ActiveSprite.Height);
 
                 WinGraphics BufferGfx = WinGraphics.FromImage(Buffer);
 
@@ -427,7 +381,7 @@ namespace C64.Controls
 
                             if (IsLineStarted)
                             {
-                                if (IsMulticolor) cellX /= 2;
+                             
 
                                 LineEndCell = new Point(cellX, cellY);
                                 BufferGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
@@ -441,7 +395,6 @@ namespace C64.Controls
                             }
                             break;
                         case DrawingState.Rectangle:
-                            if (IsMulticolor) cellX /= 2;
 
                             LineEndCell = new Point(cellX, cellY);
                             BufferGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
@@ -455,34 +408,21 @@ namespace C64.Controls
                     }
                 }
                 else {
-                    if (IsMulticolor)
+                    if (ActiveSprite.IsMulticolor)
                     {
-                        cellX /= 2; // In multicolor mode, each cell is effectively 2 pixels wide
-
-                        if (cellX < 0 || cellX >= 12 || cellY < 0 || cellY >= 21)
-                            return; // Prevent drawing outside the control bounds
-
-                        byte mColor = (byte)(SelectedColor << (6 - ((cellX % 4) * 2))); // Shift the selected color to the correct position
-                        byte earaseMask = (byte)~(3 << (6 - ((cellX % 4) * 2))); // Mask to clear the existing color bits for this cell
-                        SpriteData[cellY * 3 + (cellX / 4)] &= earaseMask; // Clear the existing color bits for this cell
-                        SpriteData[cellY * 3 + (cellX / 4)] |= (byte)mColor; // Toggle the color bits]
+                        ActiveSprite[cellX, cellY] = SelectedColor;             
                         Invalidate(); // Redraw the control to reflect changes
-
-
                     }
                     else
                     {
-                        int byteIndex = cellY * 3 + (cellX / 8);
-                        int bitIndex = 7 - (cellX % 8);
-                        if (byteIndex < SpriteData.Length)
-                        {
-                            if (ColorProvider.SelectedSlotIndex == 0)
-                                SpriteData[byteIndex] &=(byte) ~(1 << bitIndex);
-                            else
-                                SpriteData[byteIndex] |= (byte)(1 << bitIndex); // Set the bit
+                        
+                        if (ColorProvider.SelectedSlotIndex == 0)
+                            ActiveSprite[cellX, cellY] = 0; // Set the pixel to 0 (transparent)  
+                        else
+                            ActiveSprite[cellX, cellY] = 1; // Set the pixel to 1 (opaque)
 
-                            Invalidate(); // Redraw the control to reflect changes
-                        }
+                        Invalidate(); // Redraw the control to reflect changes
+                        
                     }
                 }
             }
@@ -504,7 +444,7 @@ namespace C64.Controls
 
         private void InjectBufferToSpriteDate ()
         {
-            int SpriteWIdth = IsMulticolor ? 12 : 24;
+            int SpriteWIdth = ActiveSprite.IsMulticolor ? 12 : 24;
 
             for (int y=0; y < 21; y++)
                 for (int x=0; x < SpriteWIdth; x++)
@@ -514,6 +454,10 @@ namespace C64.Controls
                         SetCell (x,y);
                     }
                 }
+
+            System.Drawing.Graphics BufferGfx = System.Drawing.Graphics.FromImage(Buffer);
+            BufferGfx.Clear(Color.Transparent);
+            BufferGfx.Dispose();
 
             Invalidate();
         }
@@ -528,10 +472,7 @@ namespace C64.Controls
 
         public void ClearSprite()
         {
-            for (int i = 0; i < SpriteData.Length; i++)
-            {
-                SpriteData[i] = 0;
-            }
+            ActiveSprite.Clear();
             Invalidate(); // Redraw the control to reflect changes
         }
 
@@ -547,24 +488,19 @@ namespace C64.Controls
 
         public byte GetCellColorIndex(int x, int y)
         {
-            if (isMulticolor)
+            if (ActiveSprite.IsMulticolor)
             {
                 if (x >= 12 || y >= 21)
                     throw new ArgumentException("X,Y Out of range");
 
-                int byteIndex = y * 3 + x / 4;
-                int FatPixel = x % 4;
-
-                return (byte)((SpriteData[byteIndex] & 3 << (6 - FatPixel * 2)) >> 6 - FatPixel * 2);
+                return (byte)ActiveSprite[x, y];
 
             }
             else
             {
                 if (x >= 24 || y >= 21) throw new ArgumentException("X,Y Out of rage");
 
-                int byteIndex = y * 3 + x / 8;
-                int pixel = x % 8;
-                return (byte)((SpriteData[byteIndex] & 1 << (7 - pixel)) >> (7 - pixel));
+                return (byte)ActiveSprite[x, y];
 
 
             }
@@ -572,38 +508,23 @@ namespace C64.Controls
 
         public void SetCellColorIndex(byte x, byte y, byte colorIndex)
         {
-            if (isMulticolor)
+            if (ActiveSprite.IsMulticolor)
             {
                 if (x >= 12 || y >= 21) return;
 
-                int byteIndex = y * 3 + x / 4;
-                int fatPixel = x % 4;
-                int shiftAmount = 6 - (fatPixel * 2);
-
-                // 1. מאפסים את שני הביטים הספציפיים של הפיקסל הנוכחי באמצעות מסיכה (Bitmask)
-                SpriteData[byteIndex] &= (byte)~(3 << shiftAmount);
-                // 2. דוחפים את הערך החדש (colorIndex מוגבל ל-2 ביטים בעזרת & 3) לאותו המיקום
-                SpriteData[byteIndex] |= (byte)((colorIndex & 3) << shiftAmount);
+                ActiveSprite[x, y] = colorIndex;
             }
             else
             {
                 if (x >= 24 || y >= 21) return;
 
-                int byteIndex = y * 3 + x / 8;
-                int pixel = x % 8;
-                int shiftAmount = 7 - pixel;
-
-                // 1. מאפסים את הביט הבודד
-                SpriteData[byteIndex] &= (byte)~(1 << shiftAmount);
-                // 2. דוחפים את הערך החדש (0 או 1)
-                SpriteData[byteIndex] |= (byte)((colorIndex & 1) << shiftAmount);
+                ActiveSprite[x, y] = colorIndex;
             }
         }
 
         public void FloodFill(int startX, int startY, byte targetColorIndex)
         {
-            int currentWidth = isMulticolor ? 12 : 24;
-            if (isMulticolor) startX /= 2;
+            int currentWidth = ActiveSprite.IsMulticolor ? 12 : 24;
 
             if (startX < 0 || startX >= currentWidth || startY < 0 || startY >= 21) return;
 
@@ -643,7 +564,7 @@ namespace C64.Controls
         }
         public void Shift(ShiftDirection direction)
         {
-            int currentWidth = isMulticolor ? 12 : 24;
+            int currentWidth = ActiveSprite.IsMulticolor ? 12 : 24;
             int currentHeight = 21;
 
             // 1. יוצרים מטריצה זמנית בגודל הספרייט ושומרים בה את אינדקסי הצבעים הנוכחיים

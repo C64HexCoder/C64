@@ -1,3 +1,6 @@
+C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.deps.json
+C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.dll
+C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.pdb
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.Controls.ByteDisplay.resources
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.Controls.CharScreen.resources
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.Controls.ColorSelector.resources
@@ -10,9 +13,7 @@ C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.Graphics.Component1
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.csproj.GenerateResource.cache
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.csproj.CoreCompileInputs.cache
-C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.deps.json
-C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.dll
-C:\Users\yossi\source\repos\C64\bin\Debug\net8.0-windows\C64.pdb
+C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.sourcelink.json
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.dll
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\refint\C64.dll
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.pdb
