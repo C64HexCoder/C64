@@ -18,3 +18,4 @@ C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.dll
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\refint\C64.dll
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.pdb
 C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\ref\C64.dll
+C:\Users\yossi\source\repos\C64\obj\Debug\net8.0-windows\C64.Controls.SpritePreview.resources

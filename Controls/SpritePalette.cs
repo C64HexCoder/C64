@@ -80,5 +80,7 @@ namespace C64.Controls
         {
             ColorChanged?.Invoke(this, EventArgs.Empty);
         }
+
+       
     }
 }

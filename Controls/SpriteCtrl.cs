@@ -19,6 +19,7 @@ namespace C64.Controls
         Line,
         Rectangle,
         Circle,
+        Polygon,
         Fill
     }
 
@@ -30,7 +31,7 @@ namespace C64.Controls
         Right
     }
 
-    public partial class SpriteCtrl : UserControl
+    public partial class SpriteCtrl : UserControl, ISpritePreview
     {
         Bitmap Buffer = new Bitmap (24,21);
 
@@ -42,13 +43,45 @@ namespace C64.Controls
 
 
         }
+        protected ISpritePreview ISpritePreview { get; set; }
+        public SpriteCtrl(Sprite sprite, ISpriteColorProvider colorProvider) : this()
+        {
+            ActiveSprite = sprite;
+            ColorProvider = colorProvider;
+        }
 
         public SpriteCtrl (Sprite sprite) : this()
         {
             ActiveSprite = sprite;
         }
 
-        public Sprite ActiveSprite { get; set; } = new Sprite();
+        public bool IsMultiColor
+        {
+            get
+            {
+                return ActiveSprite.IsMulticolor;
+            }
+            set
+            {
+                ActiveSprite.IsMulticolor = value;
+                Invalidate();
+                OnSpriteChanged();
+            }
+        }
+        Sprite _activeSprite = new Sprite();
+        public Sprite ActiveSprite
+        {
+            get
+            {
+                return _activeSprite;
+            }
+            set
+            {
+                _activeSprite = value;
+                Invalidate();
+                OnSpriteChanged();
+            }
+        }
 
         public ISpriteColorProvider colorProvider;
 
@@ -78,6 +111,7 @@ namespace C64.Controls
         public void HandleOnColorChanged(object sender, EventArgs e)
         {
             Invalidate(); // Redraw the control to reflect changes in color provider
+            OnSpriteChanged();
         }
 
         Pen GridPen = new Pen(Color.Red);
@@ -189,6 +223,7 @@ namespace C64.Controls
             {
                 cellWidthHeight = value;
                 Invalidate();
+                OnSpriteChanged();
             }
         }
 
@@ -204,6 +239,7 @@ namespace C64.Controls
             {
                 ActiveSprite.IsMulticolor = value;
                 Invalidate();
+                OnSpriteChanged();
             }
         }
         protected override void OnPaint(PaintEventArgs e)
@@ -305,9 +341,9 @@ namespace C64.Controls
         }
 
 
-        bool IsLineStarted = false;
+        bool IsDrawingStarted = false;
 
-        private PointF lineStartCell;
+        private PointF DrawingStartedCell;
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -325,15 +361,19 @@ namespace C64.Controls
                     break;
                 case DrawingState.Line:
 
-                    lineStartCell = new Point (cellX, cellY);
-                    IsLineStarted = true;
+                    DrawingStartedCell = new Point (cellX, cellY);
+                    IsDrawingStarted = true;
                     break;
                 case DrawingState.Rectangle:
 
-                    lineStartCell = new Point (cellX, cellY);
-                    IsLineStarted = true;
+                    DrawingStartedCell = new Point (cellX, cellY);
+                    IsDrawingStarted = true;
                     break;
-                    
+                case DrawingState.Circle:
+                    DrawingStartedCell = new Point(cellX, cellY);
+                    IsDrawingStarted = true;
+                    break;
+           
                 case DrawingState.Fill:
 
                     FloodFill(cellX, cellY, SelectedColor);
@@ -348,10 +388,11 @@ namespace C64.Controls
    
                 ActiveSprite[cellX, cellY] = (byte)SelectedColor; // Update the ActiveSprite with the selected color
                 Invalidate(); // Redraw the control to reflect changes
+                OnSpriteChanged();
 
         }
 
-        PointF LineEndCell;
+        PointF DrawingEndingCell;
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -376,15 +417,15 @@ namespace C64.Controls
                     {
                         case DrawingState.Line:
 
-                            if (IsLineStarted)
+                            if (IsDrawingStarted)
                             {
                              
 
-                                LineEndCell = new Point(cellX, cellY);
+                                DrawingEndingCell = new Point(cellX, cellY);
                                 BufferGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
                                 BufferGfx.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
                                 BufferGfx.Clear(Color.Transparent);
-                                BufferGfx.DrawLine(drawingPen,lineStartCell, LineEndCell);
+                                BufferGfx.DrawLine(drawingPen,DrawingStartedCell, DrawingEndingCell);
                                 BufferGfx.Dispose();
                                 Invalidate();
                                 // Implement line drawing logic based on lineStartPoint and current mouse position
@@ -393,15 +434,26 @@ namespace C64.Controls
                             break;
                         case DrawingState.Rectangle:
 
-                            LineEndCell = new Point(cellX, cellY);
+                            DrawingEndingCell = new Point(cellX, cellY);
                             BufferGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
                             BufferGfx.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
                             BufferGfx.Clear(Color.Transparent);
-                            BufferGfx.DrawRectangle(drawingPen,lineStartCell.X,lineStartCell.Y,Math.Abs(LineEndCell.X-lineStartCell.X),Math.Abs(LineEndCell.Y-lineStartCell.Y));
+                            BufferGfx.DrawRectangle(drawingPen,DrawingStartedCell.X,DrawingStartedCell.Y,Math.Abs(DrawingEndingCell.X-DrawingStartedCell.X),Math.Abs(DrawingEndingCell.Y-DrawingStartedCell.Y));
                     
                             BufferGfx.Dispose();
                             Invalidate();
                             break;
+                        case DrawingState.Circle:
+                            DrawingEndingCell = new Point(cellX, cellY);
+                            BufferGfx.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                            BufferGfx.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                            BufferGfx.Clear(Color.Transparent);
+                            float radius = (float)Math.Sqrt(Math.Pow(DrawingEndingCell.X - DrawingStartedCell.X, 2) + Math.Pow(DrawingEndingCell.Y - DrawingStartedCell.Y, 2));
+                            BufferGfx.DrawEllipse(drawingPen, DrawingStartedCell.X - radius, DrawingStartedCell.Y - radius, radius * 2, radius * 2);
+                            BufferGfx.Dispose();
+                            Invalidate();
+                            break;
+              
                     }
                 }
                 else {
@@ -409,6 +461,7 @@ namespace C64.Controls
                     {
                         ActiveSprite[cellX, cellY] = SelectedColor;             
                         Invalidate(); // Redraw the control to reflect changes
+                        OnSpriteChanged();
                     }
                     else
                     {
@@ -419,6 +472,7 @@ namespace C64.Controls
                             ActiveSprite[cellX, cellY] = 1; // Set the pixel to 1 (opaque)
 
                         Invalidate(); // Redraw the control to reflect changes
+                        OnSpriteChanged();
                         
                     }
                 }
@@ -428,14 +482,14 @@ namespace C64.Controls
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (CurrentDrawingState == DrawingState.Line || CurrentDrawingState == DrawingState.Rectangle)
+            if (CurrentDrawingState == DrawingState.Line || CurrentDrawingState == DrawingState.Rectangle || CurrentDrawingState == DrawingState.Circle)
             {
                 // Draw the final line based on the starting point and the current mouse position into the SpriteData
                 int X = e.X / CellWidthHeight;
                 int Y = e.Y / CellWidthHeight;
                 InjectBufferToSpriteDate();
 
-                IsLineStarted = false;
+                IsDrawingStarted = false;
             }
         }
 
@@ -457,6 +511,7 @@ namespace C64.Controls
             BufferGfx.Dispose();
 
             Invalidate();
+            OnSpriteChanged();
         }
 
         private void UpdateSpriteDataFromGrid()
@@ -471,6 +526,7 @@ namespace C64.Controls
         {
             ActiveSprite.Clear();
             Invalidate(); // Redraw the control to reflect changes
+            OnSpriteChanged();
         }
 
         class SpriteSelectorEventArgs : EventArgs
@@ -558,6 +614,7 @@ namespace C64.Controls
 
             // מרעננים את הפקד באופן אקטיבי כדי שהשינוי הגרפי יוצג מיידית על המסך
             Invalidate();
+            OnSpriteChanged();
         }
         public void Shift(ShiftDirection direction)
         {
@@ -603,9 +660,27 @@ namespace C64.Controls
 
             // 4. מרעננים את התצוגה הויזואלית ב-Live
             Invalidate();
+            OnSpriteChanged();
         }
 
-       
+        public Color GetPreviewPixel(int x, int y)
+        {
+            if (x < 0 || x >= ActiveSprite.Width || y < 0 || y >= ActiveSprite.Height)
+                throw new ArgumentOutOfRangeException("Coordinates are out of bounds.");
+
+            return ColorProvider.GetColorForSlot(ActiveSprite[x, y]);
+        }
+
+        public event EventHandler SpriteChanged;
+
+        public void OnSpriteChanged()
+        {
+            SpriteChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public int PreviewWidth => ActiveSprite.Width;
+
+        public int PreviewHeight => ActiveSprite.Height;
 
     }
 

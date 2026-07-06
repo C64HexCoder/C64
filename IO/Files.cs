@@ -91,6 +91,7 @@ namespace C64.IO
 
                 // הזרקת הבתים לתוך אובייקט הספרייט (נניח דרך פונקציית עזר או מתודה פנימית שיצרת)
                 singleSprite.RawData = spriteData;
+                
 
                 // הוספה לרשימה המשותפת
                 spritesList.Add(singleSprite);
