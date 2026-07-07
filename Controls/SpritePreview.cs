@@ -16,11 +16,15 @@ namespace C64.Controls
         const int SpriteHeight = 21;
         const int MultiColorSpriteWidth = 12;
 
+        private int OldWidth ;
+        private int OldHeight ;
+
         private Bitmap SpritePreviewCanvas = new (SpriteWidth, SpriteHeight);
         public SpritePreview()
         {
             InitializeComponent();
             DoubleBuffered = true;
+            OldWidth = this.Width; OldHeight = this.Height;
         }
 
         public ISpritePreview SpritePrevInterface { get; private set; }
@@ -83,6 +87,25 @@ namespace C64.Controls
                 }
             }
         }
-    }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            if (Math.Abs(this.Width-OldWidth) > Math.Abs(this.Height-OldHeight))
+            {
+                OldWidth = this.Width; OldHeight = this.
+                Height = Width;// / OldWidth * OldHeight;
+
+            }
+            else
+            {
+                OldWidth = this.Width; OldHeight = this.Height; 
+                Width = Height; // / OldHeight * OldWidth;
+            }   
+
+            Invalidate(); // Redraw the control when resized
+        }
     
+}
 }
