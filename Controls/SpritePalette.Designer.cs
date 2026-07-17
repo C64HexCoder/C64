@@ -37,6 +37,7 @@
             // spriteColorColorSelector
             // 
             spriteColorColorSelector.BackColor = System.Drawing.Color.FromArgb(255, 255, 255);
+            spriteColorColorSelector.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             spriteColorColorSelector.C64ColorIndex = 1;
             spriteColorColorSelector.Location = new System.Drawing.Point(122, 3);
             spriteColorColorSelector.Name = "spriteColorColorSelector";
@@ -49,6 +50,7 @@
             // multiColor1ColorSelector
             // 
             multiColor1ColorSelector.BackColor = System.Drawing.Color.FromArgb(136, 0, 0);
+            multiColor1ColorSelector.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             multiColor1ColorSelector.C64ColorIndex = 2;
             multiColor1ColorSelector.Location = new System.Drawing.Point(241, 3);
             multiColor1ColorSelector.Name = "multiColor1ColorSelector";
@@ -61,6 +63,7 @@
             // multiColor2colorSelector
             // 
             multiColor2colorSelector.BackColor = System.Drawing.Color.FromArgb(170, 255, 238);
+            multiColor2colorSelector.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             multiColor2colorSelector.C64ColorIndex = 3;
             multiColor2colorSelector.Location = new System.Drawing.Point(360, 3);
             multiColor2colorSelector.Name = "multiColor2colorSelector";
@@ -73,6 +76,7 @@
             // backgroundColorSelector
             // 
             backgroundColorSelector.BackColor = System.Drawing.Color.FromArgb(0, 0, 0);
+            backgroundColorSelector.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             backgroundColorSelector.C64ColorIndex = 0;
             backgroundColorSelector.Location = new System.Drawing.Point(3, 3);
             backgroundColorSelector.Name = "backgroundColorSelector";
