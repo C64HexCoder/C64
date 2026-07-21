@@ -355,8 +355,14 @@ namespace C64.Controls
             {
                 case DrawingState.Pen:
      
-
-                    SetCell(cellX, cellY);
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        SetCell(cellX, cellY);
+                    }
+                    else if (e.Button == MouseButtons.Right)
+                    {
+                        ClearCell(cellX, cellY);
+                    }
                     //Invalidate();
                     break;
                 case DrawingState.Line:
@@ -392,6 +398,20 @@ namespace C64.Controls
 
         }
 
+        private void SetCell(int cellX, int cellY, byte color)
+        {
+            ActiveSprite[cellX, cellY] = color;
+            Invalidate();
+            OnSpriteChanged();
+        }
+
+        private void ClearCell (int cellX, int cellY)
+        {
+            ActiveSprite[cellX, cellY] = 0; // Set the pixel to 0 (transparent)
+            Invalidate(); // Redraw the control to reflect changes
+            OnSpriteChanged();
+        }
+
         PointF DrawingEndingCell;
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -401,13 +421,14 @@ namespace C64.Controls
                 return; // Prevent drawing outside the control bounds
             Pen drawingPen = new Pen(ColorProvider.GetColorForSlot(SelectedColor), 1);
 
+            int cellX = e.X / (this.Width / ActiveSprite.Width);
+            int cellY = e.Y / (this.Height / ActiveSprite.Height);
 
             System.Drawing.Graphics g = CreateGraphics();
 
             if (e.Button == MouseButtons.Left)
             {
-                int cellX = e.X / (this.Width / ActiveSprite.Width);
-                int cellY = e.Y / (this.Height / ActiveSprite.Height);
+               
 
                 WinGraphics BufferGfx = WinGraphics.FromImage(Buffer);
 
@@ -475,6 +496,13 @@ namespace C64.Controls
                         OnSpriteChanged();
                         
                     }
+                }
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                if (CurrentDrawingState == DrawingState.Pen)
+                {
+                    ClearCell(cellX, cellY);
                 }
             }
         }
