@@ -56,7 +56,7 @@ namespace C64.IO
         // גודל של ספרייט בודד של קומודור 64 בבתים (63 בתים של דאטה + 1 בית זבל/הרחבה)
         private const int C64_SPRITE_SIZE_BYTES = 64;
 
-        public static List<Sprite> LoadSpritesFromPRG(string filePath,out ushort loadAddress)
+        public static List<Sprite> LoadSpritesFromPRG(string filePath, out ushort loadAddress)
         {
             List<Sprite> spritesList = new List<Sprite>();
 
@@ -91,7 +91,7 @@ namespace C64.IO
 
                 // הזרקת הבתים לתוך אובייקט הספרייט (נניח דרך פונקציית עזר או מתודה פנימית שיצרת)
                 singleSprite.RawData = spriteData;
-                
+
 
                 // הוספה לרשימה המשותפת
                 spritesList.Add(singleSprite);
@@ -100,18 +100,21 @@ namespace C64.IO
             return spritesList;
         }
 
-        
-        public static void SaveSpritesAsPRG (string filePath,List<Sprite> spritesList,UInt16 address = 0x3000)
+
+        public static void SaveSpritesAsPRG(string filePath, List<Sprite> spritesList, UInt16 address = 0x3000)
         {
-            FileStream fileStream = new FileStream(filePath,FileMode.Create);
+            FileStream fileStream = new FileStream(filePath, FileMode.Create);
             BinaryWriter writer = new BinaryWriter(fileStream);
 
             writer.Write(address);
 
             foreach (Sprite sprite in spritesList)
             {
-                writer.Write (sprite.RawData);             
+                writer.Write(sprite.RawData);
             }
+
+            writer.Flush();
+            writer.Close();
         }
 
 
@@ -132,5 +135,81 @@ namespace C64.IO
             return null;
         }
 
+
+        public static List<Sprite> LoadSpritesFromKoala(string filePath, out byte backgroundColor)
+        {
+            backgroundColor = 0;
+            // כאן תכניס את לוגיקת הפירוק של קובץ קואלה שכבר כתבת
+            return new List<Sprite>();
+        }
+
+        public static void SaveSpritesAsAssembly(string filePath, List<Sprite> spritesList, string labelPrefix = "sprite")
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                int spriteIndex = 0;
+                foreach (Sprite sprite in spritesList)
+                {
+                    writer.WriteLine($"{labelPrefix}{spriteIndex}:");
+                    for (int i = 0; i < sprite.RawData.Length; i++)
+                    {
+                        if (i % 8 == 0) // הוספת רווח אחרי כל 8 בתים
+                        {
+                            writer.Write(".byte ");
+                        }
+                        if (i % 8 != 0)
+                        {
+                            writer.Write($"{sprite.RawData[i]:X2}");
+                            if (i % 8 != 7 && i != sprite.RawData.Length - 1)
+                                writer.Write(",");
+
+                        }
+                        if (i % 8 == 7 || i == sprite.RawData.Length - 1)
+                        {
+                            writer.WriteLine();
+                        }
+                    }
+                    writer.WriteLine(); // רווח בין ספרייטים
+                    spriteIndex++;
+                }
+            }
+        }
+
+        public static void SaveSpriteAsAssembly(string filePath, Sprite sprite, string label = "sprite")
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                writer.WriteLine($"{label}:");
+                for (int i = 0; i < sprite.RawData.Length; i++)
+                {
+                    if (i % 8 == 0) // הוספת רווח אחרי כל 8 בתים
+                    {
+                        writer.Write(".byte ");
+                    }
+                    if (i % 8 != 0)
+                    {
+                        writer.Write($"{sprite.RawData[i]:X2}");
+                        if (i % 8 != 7 && i != sprite.RawData.Length - 1)
+                            writer.Write(",");
+
+                    }
+                    if (i % 8 == 7 || i == sprite.RawData.Length - 1)
+                    {
+                        writer.WriteLine();
+                    }
+                }
+            }
+        }
+
+        public static void SaveSpritesAsBinary(string filePath, List<Sprite> spritesList)
+        {
+            using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            {
+                foreach (Sprite sprite in spritesList)
+                {
+                    fs.Write(sprite.RawData, 0, sprite.RawData.Length);
+                }
+            }
+        }
     }
 }

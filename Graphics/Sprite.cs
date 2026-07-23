@@ -1,4 +1,6 @@
-﻿using System;
+﻿using C64.Controls;
+using C64.IO;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -11,7 +13,7 @@ namespace C64.Graphics
     {
         public const int TotalBytes = 64;
         private const int C64_SPRITE_SIZE_BYTES = 64;
-
+        private byte[] colorSlots = { 0, 1, 2, 3 }; // מערך של 4 צבעים עבור ספרייט
         public override int Width => IsMulticolor ? 12 : 24;
         public override int Height => 21;
 
@@ -144,10 +146,14 @@ namespace C64.Graphics
         {
             // 1. מנקים את מערך הברזל של ה-64 בתים לחלוטין
             Array.Clear(RawData, 0, TotalBytes);
+            //sourceBmp = C64SpriteColorQuantizer.AutoQuantizeTo4Colors(sourceBmp, out byte[] colorSlots);
+            //sourceBmp = KMeansQuant.C64ReduceColors(sourceBmp);
 
             // 2. קביעת הגבול הלוגי של הציור
             int logicalWidth = isMulticolorMode ? 12 : Width; // 12 פיקסלים שמנים או 24 רגילים
             int scanHeight = Math.Min(sourceBmp.Height, Height);
+
+            IsMulticolor = isMulticolorMode;
 
             // 3. סריקה של התמונה פיקסל אחר פיקסל
             for (int y = 0; y < scanHeight; y++)
@@ -168,30 +174,8 @@ namespace C64.Graphics
                         continue;
                     }
 
-                    // חישוב בהירות (Brightness) של הפיקסל המודרני (ערך בין 0 ל-255)
-                    double brightness = (0.299 * pixelColor.R) + (0.587 * pixelColor.G) + (0.114 * pixelColor.B);
-
-                    if (isMulticolorMode)
-                    {
-                        // --- לוגיקת המרה עבור מצב MultiColor (מצפה לערכים 0, 1, 2, 3) ---
-                        // פה נעשה מיפוי פשוט לפי בהירות (סוג של Quantization מהיר ל-4 רמות עומק):
-                        if (brightness < 64) this[x, y] = 0; // כהה מאוד -> צבע רקע
-                        else if (brightness < 128) this[x, y] = 1; // כהה בינוני -> מולטיקולור 1
-                        else if (brightness < 192) this[x, y] = 2; // בהיר בינוני -> צבע ספרייט ייחודי
-                        else this[x, y] = 3; // בהיר מאוד/לבן -> מולטיקולור 2
-                    }
-                    else
-                    {
-                        // --- לוגיקת המרה עבור מצב Hi-Res סטנדרטי (מצפה ל-0 או 1) ---
-                        if (brightness > 128)
-                        {
-                            this[x, y] = 1; // בהיר -> צבע ספרייט
-                        }
-                        else
-                        {
-                            this[x, y] = 0; // כהה -> שקוף/רקע
-                        }
-                    }
+                    byte colorIndex = (byte)Array.FindIndex(colorSlots, c => c == C64Palette.MapRGBToC64Index(pixelColor));
+                    this[x, y] = colorIndex;
                 }
             }
         }
@@ -199,6 +183,16 @@ namespace C64.Graphics
         public void Clear()
         {
             Array.Clear(RawData, 0, TotalBytes);
+        }
+
+        public Sprite Clone ()
+        {
+            Sprite clonedSprite = new Sprite();
+            clonedSprite.RawData = new byte[RawData.Length];
+            Array.Copy(RawData, clonedSprite.RawData, RawData.Length);
+            clonedSprite.IsMulticolor = this.IsMulticolor;
+
+            return clonedSprite;
         }
     }
 }

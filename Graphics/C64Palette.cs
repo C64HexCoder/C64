@@ -106,6 +106,11 @@ namespace C64.Graphics
         }
         C64Colors c64Colors;
 
+        public Color this[int index] {
+            get { return _activePalette[index]; }
+            set { _activePalette[index] = value; }
+        }
+
         static string[] ColorNames = {
             "Black","White","Red","Cyan","Purple","Green","Blue","Yellow","Orange","Brown","Light Red","Dark Gray","Medium Gray","Light Green","light Blue","Light Gray" };
 
